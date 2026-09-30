@@ -1,0 +1,78 @@
+# ---------------------------------------------------------------------------
+# TripVault local development infrastructure
+#   docker compose up -d
+#   docker compose ps
+# ---------------------------------------------------------------------------
+
+name: tripvault
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: tripvault-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: tripvault
+      # Keeps initdb deterministic across host locales.
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./scripts/create-test-db.sql:/docker-entrypoint-initdb.d/10-create-test-db.sql:ro
+    # Migrations are intentionally NOT mounted into docker-entrypoint-initdb.d:
+    # that directory runs every .sql file (including *.down.sql) with no
+    # ordering guarantee and no schema_migrations bookkeeping. The Go binary
+    # owns migrations instead - run `make migrate-up`.
+    #
+    # The one exception is scripts/create-test-db.sql, which only creates an
+    # empty database and applies no schema. The integration tests need a
+    # database separate from the dev one, because they drop and recreate the
+    # public schema; sharing a database meant `make test` could wipe the schema
+    # out from under a running `make run-api`.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d tripvault"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    container_name: tripvault-redis
+    restart: unless-stopped
+    # --save "" disables RDB snapshots; TripVault uses Redis for cache,
+    # rate limits and short-lived job state only, never as the source of truth.
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory-policy", "allkeys-lru"]
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Catches every outbound email during development.
+  # Web UI: http://localhost:8025
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: tripvault-mailpit
+    restart: unless-stopped
+    environment:
+      MP_MAX_MESSAGES: 500
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+    ports:
+      - "8025:8025" # web UI
+      - "1025:1025" # SMTP
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+volumes:
+  postgres-data:

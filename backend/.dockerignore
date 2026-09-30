@@ -1,0 +1,20 @@
+# Excludes files from the Docker build context so the image is built only from
+# what the Go compiler needs. A smaller context means a faster, more
+# reproducible build and no chance of a local .env leaking into an image layer.
+
+# Secrets and local configuration.
+.env
+.env.*
+!.env.example
+
+# Build output and coverage reports. Patterns are anchored with a leading
+# slash: a bare "server" would also match the cmd/server package directory.
+coverage.out
+*.test
+*.out
+/dist
+
+# Editor and OS noise.
+.DS_Store
+.idea
+.vscode

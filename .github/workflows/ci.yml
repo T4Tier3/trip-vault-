@@ -1,0 +1,186 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A new push to the same branch supersedes the previous run.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: tripvault_test
+        ports: ["5432:5432"]
+        # Wait for the database to accept connections, not merely for the
+        # container to start. Migrating too early is a flaky failure.
+        options: >-
+          --health-cmd "pg_isready -U postgres -d tripvault_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          # Restores the module cache between runs instead of re-downloading.
+          cache-dependency-path: backend/go.sum
+
+      - name: Verify formatting
+        # Fails the build rather than reformatting, so a diff never lands
+        # without being noticed.
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "These files are not gofmt clean:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Create the guard-test database
+        # The guard test proves the schema-drop guard refuses any database whose
+        # name does not contain "test", so it needs one that the guard rejects.
+        run: |
+          PGPASSWORD=postgres psql -h localhost -U postgres -d postgres \
+            -c 'CREATE DATABASE tripvault_guard'
+
+      - name: Test
+        env:
+          APP_ENV: test
+          # The tests build their config in code and read only these connection
+          # strings from the environment. Each test binary gets its own
+          # tripvault_test_<package> database inside this server, created on
+          # first use.
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tripvault_test?sslmode=disable
+          TEST_REDIS_URL: redis://localhost:6379/0
+          TESTDEV_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tripvault_guard?sslmode=disable
+        # -coverpkg covers the whole module, so the integration tests count
+        # towards the packages they exercise. Without it every function in
+        # auth and user reports 0% despite being covered through the server
+        # suite, and the number is not worth publishing.
+        run: go test ./... -count=1 -race -coverpkg=./... -coverprofile=coverage.out -covermode=atomic
+
+      - name: Check nothing was skipped
+        # A skipped integration test looks exactly like a passing one, which is
+        # how "PostgreSQL unavailable" can hide behind a green build. This fails
+        # the job instead.
+        run: |
+          skipped=$(go test ./... -count=1 -v 2>&1 | grep -c '^--- SKIP' || true)
+          if [ "$skipped" -ne 0 ]; then
+            echo "::error::$skipped test(s) were skipped; see above for which"
+            exit 1
+          fi
+
+      - name: Coverage summary
+        run: go tool cover -func=coverage.out
+
+      - name: Build
+        run: go build ./...
+
+  docker:
+    name: Docker image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      # Building is the real test here: it catches a Dockerfile that references
+      # a path missing from the build context.
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: backend
+          file: backend/Dockerfile
+          push: false
+          load: true
+          tags: tripvault-backend:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Image runs as non-root
+        run: |
+          # The runtime stage must not contain a shell or a package manager.
+          if docker run --rm --entrypoint /server tripvault-backend:ci --help 2>&1 | grep -q 'no such file'; then
+            echo "binary is missing from the image"
+            exit 1
+          fi
+          user=$(docker image inspect tripvault-backend:ci --format '{{.Config.User}}')
+          echo "image runs as: $user"
+          if [ -z "$user" ] || [ "$user" = "root" ] || [ "$user" = "0" ]; then
+            echo "image would run as root, which it must not"
+            exit 1
+          fi
+
+  mobile:
+    name: Mobile
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: mobile
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: mobile/package.json
+          # npm ci rather than npm install, so a build cannot quietly pick up a
+          # different version than the one the lockfile pins.
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Check nothing was skipped
+        # A silently skipped suite reads as a passing one. This fails instead.
+        run: |
+          skipped=$(npm test -- --verbose 2>&1 | grep -cE '^\s*○ skipped' || true)
+          if [ "$skipped" -ne 0 ]; then
+            echo "::error::$skipped mobile test(s) were skipped; see above"
+            exit 1
+          fi
