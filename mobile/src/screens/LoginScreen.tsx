@@ -1,10 +1,22 @@
-import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useState } from "react";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
-import { useAuth } from '../auth/AuthProvider';
-import { isApiError, userFacingMessage } from '../api/errors';
-import { Field, FormError, LinkButton, PrimaryButton } from '../components/form';
-import { theme } from '../theme';
+import { useAuth } from "../auth/AuthProvider";
+import { isApiError, userFacingMessage } from "../api/errors";
+import {
+  Field,
+  FormError,
+  LinkButton,
+  PrimaryButton,
+} from "../components/form";
+import { theme } from "../theme";
 
 interface Props {
   onRegister: () => void;
@@ -21,8 +33,8 @@ interface Props {
  */
 export function LoginScreen({ onRegister, onForgotPassword }: Props) {
   const { signIn } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -54,9 +66,12 @@ export function LoginScreen({ onRegister, onForgotPassword }: Props) {
   return (
     <KeyboardAvoidingView
       style={styles.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+      >
         <Text style={styles.title}>TripVault</Text>
         <Text style={styles.subtitle}>Your trips, kept safe.</Text>
 
@@ -82,6 +97,7 @@ export function LoginScreen({ onRegister, onForgotPassword }: Props) {
           <Field
             label="Password"
             value={password}
+            placeholder="••••••••"
             onChangeText={(v) => {
               setPassword(v);
               clearError();
@@ -96,7 +112,10 @@ export function LoginScreen({ onRegister, onForgotPassword }: Props) {
           <PrimaryButton title="Sign in" onPress={submit} busy={busy} />
 
           <LinkButton title="Create an account" onPress={onRegister} />
-          <LinkButton title="Forgot your password?" onPress={onForgotPassword} />
+          <LinkButton
+            title="Forgot your password?"
+            onPress={onForgotPassword}
+          />
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -105,14 +124,19 @@ export function LoginScreen({ onRegister, onForgotPassword }: Props) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: theme.background },
-  container: { flexGrow: 1, justifyContent: 'center', padding: theme.space.lg },
-  title: { color: theme.text, fontSize: 32, fontWeight: '700', textAlign: 'center' },
+  container: { flexGrow: 1, justifyContent: "center", padding: theme.space.lg },
+  title: {
+    color: theme.text,
+    fontSize: 32,
+    fontWeight: "700",
+    textAlign: "center",
+  },
   subtitle: {
     color: theme.textMuted,
     fontSize: 15,
     marginBottom: theme.space.lg,
     marginTop: theme.space.sm,
-    textAlign: 'center',
+    textAlign: "center",
   },
-  form: { width: '100%', maxWidth: 420, alignSelf: 'center' },
+  form: { width: "100%", maxWidth: 420, alignSelf: "center" },
 });

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Linking, StatusBar, StyleSheet, Text, View } from 'react-native';
+import * as Linking from 'expo-linking';
+import { ActivityIndicator, StatusBar, StyleSheet, Text, View } from 'react-native';
 
 import { useAuth } from '../auth/AuthProvider';
 import { parseDeepLink, type DeepLink } from '../auth/deepLink';
@@ -83,6 +84,10 @@ export function AuthFlow() {
   if (state.status === 'unverified') {
     return (
       <VerifyEmailScreen
+        // Keyed by token so that opening a second verification link remounts the
+        // screen with fresh state. That is how the error and busy flags get
+        // reset, instead of the screen reaching into state from an effect.
+        key={link.token ?? 'no-token'}
         email={state.user.email}
         {...(link.screen === 'verify-email' ? { token: link.token } : {})}
         onResend={() => resendVerification(state.user.email)}
@@ -110,6 +115,7 @@ export function AuthFlow() {
   if (screen === 'verify') {
     return (
       <VerifyEmailScreen
+        key={link.token ?? 'no-token'}
         email={pendingEmail}
         {...(link.screen === 'verify-email' ? { token: link.token } : {})}
         onResend={() => resendVerification(pendingEmail)}

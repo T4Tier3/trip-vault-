@@ -2,43 +2,45 @@
   "name": "tripvault-mobile",
   "version": "0.1.0",
   "private": true,
-  "description": "TripVault React Native client",
+  "description": "TripVault Expo client",
+  "main": "index.js",
   "engines": {
-    "node": ">=20"
+    "node": ">=22.13.0"
   },
   "scripts": {
-    "android": "react-native run-android",
-    "ios": "react-native run-ios",
-    "start": "react-native start",
+    "start": "expo start",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "prebuild": "expo prebuild",
+    "doctor": "expo doctor",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src __tests__",
+    "lint": "eslint .",
     "test": "jest",
     "test:watch": "jest --watch"
   },
   "dependencies": {
-    "react": "18.3.1",
-    "react-native": "0.76.5",
-    "react-native-keychain": "^9.2.2",
-    "react-native-safe-area-context": "^4.14.0"
+    "expo": "^57.0.26",
+    "expo-constants": "~57.0.20",
+    "expo-linking": "~57.0.11",
+    "expo-secure-store": "~57.0.4",
+    "expo-system-ui": "~57.0.4",
+    "react": "19.2.3",
+    "react-native": "0.86.3"
   },
   "devDependencies": {
-    "@react-native-community/cli": "^15.0.1",
-    "@react-native-community/cli-platform-android": "^15.0.1",
-    "@react-native-community/cli-platform-ios": "^15.0.1",
-    "@react-native/babel-preset": "0.76.5",
-    "@react-native/eslint-config": "0.76.5",
-    "@react-native/metro-config": "0.76.5",
-    "@react-native/typescript-config": "0.76.5",
+    "@react-native/jest-preset": "^0.86.3",
     "@types/jest": "^29.5.14",
-    "@types/react": "^18.3.12",
+    "@types/react": "~19.2.4",
+    "babel-preset-expo": "~57.0.0",
+    "eslint": "^9.39.5",
+    "eslint-config-expo": "~57.0.2",
     "jest": "^29.7.0",
-    "react-test-renderer": "18.3.1",
-    "ts-jest": "^29.2.5",
-    "typescript": "^5.6.3"
+    "jest-expo": "~57.0.5",
+    "react-test-renderer": "^19.2.3",
+    "typescript": "~6.0.3"
   },
   "jest": {
-    "preset": "ts-jest",
-    "testEnvironment": "node",
+    "preset": "jest-expo",
     "testMatch": [
       "<rootDir>/__tests__/**/*.test.ts"
     ],

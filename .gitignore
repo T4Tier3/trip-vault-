@@ -13,7 +13,7 @@ backend/coverage.html
 *.test
 *.out
 
-# ---------- Node / React Native ----------
+# ---------- Node / React Native / Expo ----------
 node_modules/
 npm-debug.log*
 yarn-error.log*
@@ -22,23 +22,21 @@ mobile/.expo/
 mobile/.env
 mobile/.env.*
 !mobile/.env.example
+mobile/dist/
+mobile/web-build/
+
+# Continuous Native Generation: `expo prebuild` regenerates these from app.json,
+# so committing them only creates merge conflicts and drifts from the config.
+mobile/ios/
+mobile/android/
 
 # iOS
-mobile/ios/Pods/
-mobile/ios/build/
-mobile/ios/*.xcworkspace/xcuserdata/
-mobile/ios/*.xcodeproj/xcuserdata/
-mobile/ios/DerivedData/
 *.hmap
 *.ipa
 *.dSYM.zip
 *.dSYM
 
 # Android
-mobile/android/.gradle/
-mobile/android/build/
-mobile/android/app/build/
-mobile/android/local.properties
 *.keystore
 !debug.keystore
 *.apk

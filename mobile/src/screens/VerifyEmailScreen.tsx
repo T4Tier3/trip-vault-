@@ -25,7 +25,10 @@ interface Props {
  */
 export function VerifyEmailScreen({ email, token, onResend, onBackToSignIn }: Props) {
   const { verifyEmail } = useAuth();
-  const [busy, setBusy] = useState(false);
+  // Arriving with a token means a verification is already in flight, so `busy`
+  // starts true. Deriving it avoids setting state synchronously inside the
+  // effect below, which causes a second render pass on every mount.
+  const [busy, setBusy] = useState(() => token !== null);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
 
@@ -36,8 +39,6 @@ export function VerifyEmailScreen({ email, token, onResend, onBackToSignIn }: Pr
     }
     let cancelled = false;
 
-    setBusy(true);
-    setError(null);
     verifyEmail(token)
       .catch((err: unknown) => {
         if (!cancelled) {

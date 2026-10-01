@@ -63,20 +63,19 @@ export function AuthProvider({
     void session.restore();
   }, [session]);
 
+  // Note the absence of `setState({ status: 'loading' })` here and below.
+  // 'loading' means "restoring a session at launch" and AuthFlow replaces the
+  // whole screen with a spinner for it. Using it for a form submission therefore
+  // unmounts the very screen that owns the error message, so a failed sign-in
+  // set 'loading' and never unset it: the user was left staring at a spinner
+  // instead of "wrong password". Each screen already has its own in-flight state.
   const signIn = useCallback(
-    async (email: string, password: string) => {
-      setState({ status: 'loading' });
-      await session.signIn(email, password);
-    },
+    (email: string, password: string) => session.signIn(email, password),
     [session],
   );
 
   const register = useCallback(
-    async (input: { email: string; password: string; name: string }) => {
-      setState({ status: 'loading' });
-      await session.register(input);
-      setState({ status: 'anonymous' });
-    },
+    (input: { email: string; password: string; name: string }) => session.register(input),
     [session],
   );
 

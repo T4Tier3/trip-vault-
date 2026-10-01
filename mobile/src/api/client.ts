@@ -243,9 +243,11 @@ export class ApiClient {
         body: body === undefined ? undefined : JSON.stringify(body),
         signal: controller.signal,
       });
-    } catch (err) {
+    } catch {
       // An abort is either our timeout or the caller's cancellation, and the
-      // two deserve different messages.
+      // two deserve different messages. The underlying error carries nothing the
+      // message does not already say, and surfacing it would leak the request
+      // URL to the UI, so it is deliberately not inspected.
       if (controller.signal.aborted) {
         throw signal?.aborted
           ? new ApiError({ code: 'aborted', message: 'Request cancelled.', status: 0 })

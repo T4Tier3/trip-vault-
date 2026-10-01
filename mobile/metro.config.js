@@ -1,4 +1,5 @@
-const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
+// Learn more: https://docs.expo.dev/guides/monorepos
+const { getDefaultConfig } = require('expo/metro-config');
 
 /**
  * Metro configuration.
@@ -12,7 +13,7 @@ const path = require('path');
 const projectRoot = __dirname;
 const workspaceRoot = path.resolve(projectRoot, '..');
 
-/** @type {import('metro-config').MetroConfig} */
+/** @type {import('expo/metro-config').MetroConfig} */
 const config = {
   // Packages installed at the repository root resolve from there.
   watchFolders: [workspaceRoot],
@@ -24,4 +25,4 @@ const config = {
   },
 };
 
-module.exports = mergeConfig(getDefaultConfig(projectRoot), config);
+module.exports = getDefaultConfig(projectRoot, config);

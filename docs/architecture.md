@@ -3,9 +3,9 @@
 ## The shape of it
 
 ```
-                    ┌──────────────┐
-   iOS / Android ──▶│  Go API      │──▶ PostgreSQL   users, tokens, sessions
-   (React Native)   │  :8080       │──▶ Redis        rate limits
+┌──────────────┐
+    iOS / Android ──▶│  Go API      │──▶ PostgreSQL   users, tokens, sessions
+    (Expo)          │  :8080       │──▶ Redis        rate limits
                     │              │──▶ SMTP         verification, reset mail
                     └──────────────┘──▶ object store  media (Phase 3+, not this API)
 ```

@@ -1,4 +1,19 @@
 {
-  "name": "TripVault",
-  "displayName": "TripVault"
+  "expo": {
+    "name": "TripVault",
+    "slug": "tripvault",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "tripvault",
+    "userInterfaceStyle": "automatic",
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "bundleIdentifier": "com.tripvault",
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.tripvault"
+    },
+    "plugins": ["expo-secure-store"]
+  }
 }

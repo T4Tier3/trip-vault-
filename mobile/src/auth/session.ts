@@ -58,13 +58,16 @@ export class Session {
    * device would only produce failed requests on every screen afterwards.
    */
   async restore(): Promise<void> {
-    const tokens = await this.store.read();
-    if (!tokens) {
-      this.set({ status: 'anonymous' });
-      return;
-    }
-
+    // The store read is inside the try on purpose. The initial state is
+    // 'loading' and nothing else moves it, so a store that throws would leave the
+    // app on the launch spinner forever with no error and nothing to retry.
     try {
+      const tokens = await this.store.read();
+      if (!tokens) {
+        this.set({ status: 'anonymous' });
+        return;
+      }
+
       const user = (await this.api.me()) as User;
       this.set(
         user.emailVerified

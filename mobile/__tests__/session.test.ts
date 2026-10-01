@@ -197,6 +197,24 @@ describe('Session failure handling', () => {
     expect(session.current().status).toBe('anonymous');
   });
 
+  it('leaves the launch spinner when the token store itself throws', async () => {
+    // The initial state is 'loading' and nothing else advances it, so a store
+    // read that rejects used to strand the app on the launch spinner: no error,
+    // no login screen, nothing to retry.
+    const store = {
+      read: jest.fn().mockRejectedValue(new Error('keystore unavailable')),
+      write: jest.fn(),
+      clear: jest.fn(),
+    };
+    const api = { me: jest.fn() } as unknown as Session['api'];
+    const session = new Session(api, store);
+
+    await session.restore();
+
+    expect(session.current().status).not.toBe('loading');
+    expect(session.current().status).toBe('error');
+  });
+
   it('does not sign the user out when the network is down', async () => {
     const store = new MemoryTokenStore({
       accessToken: 'a',

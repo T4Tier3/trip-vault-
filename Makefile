@@ -71,8 +71,8 @@ install-mobile: ## Install mobile dependencies
 	cd mobile && npm install
 
 .PHONY: mobile
-mobile: ## Run the React Native app (dev=android|ios)
-	cd mobile && npm install && npx react-native run-$(or $(dev),android)
+mobile: ## Run the Expo dev server (default shows a QR code for a physical device; dev=ios|android|web opens a target directly)
+	cd mobile && npm install && npx expo start $(if $(dev),--$(dev),)
 
 .PHONY: check
 check: ## Typecheck, lint and test both sides, failing on skipped tests
